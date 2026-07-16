@@ -1,0 +1,1474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>API Playground</title>
+<style>
+:root {
+  --bg: #fcfcf9;
+  --surface: #ffffff;
+  --surface-2: #f6f6f3;
+  --accent: #18181b;
+  --accent-dim: #404040;
+  --text: #18181b;
+  --text-dim: #737373;
+  --border: #e6e6e1;
+  --radius: 10px;
+  --mono: 'SF Mono', 'Cascadia Code', 'Fira Code', monospace;
+  --shadow: 0 8px 30px rgba(0,0,0,0.06);
+  --transition: all 0.2s ease;
+}
+
+body.dark {
+  --bg: #100e12;
+  --surface: #16161a;
+  --surface-2: #1e1e23;
+  --accent: #f4f4f4;
+  --accent-dim: #c4c4c4;
+  --text: #f2f2f0;
+  --text-dim: #8a8fa0;
+  --border: #25252d;
+  --shadow: 0 8px 30px rgba(0,0,0,0.45);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background: var(--bg) !important;
+  color: var(--text);
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  transition: background 0.25s ease, color 0.25s ease;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.sidebar {
+  position: relative;
+  width: 280px;
+  background: linear-gradient(180deg, var(--surface) 0%, var(--surface-2) 100%);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  padding: 20px 16px;
+  gap: 16px;
+  flex-shrink: 0;
+  transition: var(--transition);
+  box-shadow: 4px 0 20px rgba(0,0,0,0.06);
+}
+
+.resize-handle {
+  position: absolute;
+  right: -3px;
+  top: 0;
+  bottom: 0;
+  width: 8px;
+  cursor: col-resize;
+  z-index: 10;
+  background: transparent;
+}
+
+.resize-handle:hover { background: var(--accent); opacity: 0.35; }
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.sidebar h2 {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--accent);
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.theme-toggle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: var(--transition);
+  flex-shrink: 0;
+}
+
+.theme-toggle:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  transform: scale(1.05);
+}
+
+.theme-toggle svg { width: 20px; height: 20px; display: block; }
+
+.collection-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.collection-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 13px;
+  background: rgba(0,0,0,0.015);
+  border: 1px solid transparent;
+  transition: var(--transition);
+}
+
+.collection-item:hover {
+  border-color: var(--border);
+  background: rgba(0,0,0,0.03);
+  transform: translateY(-1px);
+}
+
+.collection-item .method {
+  font-size: 10px;
+  font-weight: 800;
+  padding: 3px 7px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  min-width: 48px;
+  text-align: center;
+  letter-spacing: 0.3px;
+}
+
+.collection-item .method.get { background: rgba(46,204,113,0.12); color: #2ecc71; }
+.collection-item .method.post { background: rgba(52,152,219,0.12); color: #3498db; }
+.collection-item .method.put { background: rgba(243,156,18,0.12); color: #f39c12; }
+.collection-item .method.del { background: rgba(231,76,60,0.12); color: #e74c3c; }
+.collection-item .method.patch { background: rgba(155,89,182,0.12); color: #9b59b6; }
+
+.collection-item .name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.collection-item .delete-btn {
+  opacity: 0;
+  background: rgba(231,76,60,0.08);
+  border: none;
+  border-radius: 50%;
+  color: #e74c3c;
+  cursor: pointer;
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.15s ease;
+}
+
+.collection-item:hover .delete-btn { opacity: 1; }
+
+.collection-item .delete-btn:hover { background: rgba(231,76,60,0.18); }
+
+.collection-item .delete-btn svg { width: 12px; height: 12px; }
+
+.sidebar-actions { display: flex; gap: 8px; }
+.sidebar-actions button {
+  flex: 1;
+  padding: 10px 8px;
+  background: var(--accent);
+  border: none;
+  border-radius: var(--radius);
+  color: var(--bg);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--transition);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+}
+
+.sidebar-actions button:hover {
+  background: var(--accent-dim);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  transition: var(--transition);
+  flex-wrap: wrap;
+  row-gap: 10px;
+}
+
+.toolbar input,
+.toolbar select,
+.toolbar button { font-family: inherit; }
+
+.method-select {
+  padding: 10px 14px;
+  background: var(--surface-2);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--transition);
+  min-width: 110px;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23737373' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 32px;
+}
+
+.method-select:focus { outline: none; border-color: var(--accent); }
+
+.url-input {
+  flex: 1 1 260px;
+  padding: 11px 16px;
+  background: var(--surface-2);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-size: 15px;
+  transition: var(--transition);
+  min-width: 0;
+}
+
+.url-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px rgba(24,24,27,0.08); }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: var(--radius);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1.5px solid transparent;
+  transition: var(--transition);
+  min-height: 44px;
+  white-space: nowrap;
+  letter-spacing: 0.2px;
+}
+
+.btn svg { width: 18px; height: 18px; flex-shrink: 0; }
+
+.btn-primary {
+  background: var(--accent);
+  color: var(--bg);
+  border-color: transparent;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+}
+
+.btn-primary:hover { background: var(--accent-dim); box-shadow: 0 6px 20px rgba(0,0,0,0.14); transform: translateY(-1px); }
+
+.btn-ghost {
+  background: var(--surface-2);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+.content-area {
+  flex: 0 1 42%;
+  overflow: hidden;
+  max-height: 48vh;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.content-area > .tabs { flex-shrink: 0; }
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  transition: var(--transition);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tab {
+  padding: 12px 18px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  color: var(--text-dim);
+  border-bottom: 2px solid transparent;
+  border-top-left-radius: var(--radius);
+  border-top-right-radius: var(--radius);
+  transition: var(--transition);
+  background: transparent;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tab:hover { color: var(--text); background: var(--surface-2); }
+
+.tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  background: var(--bg);
+}
+
+.tab-content { display: none; flex: 1; overflow: hidden; min-height: 0; }
+.tab-content.active { display: flex; flex-direction: column; }
+
+/* Panel is the scroll container; rows live in .rows-list ABOVE the sticky footer */
+.headers-panel {
+  padding: 16px 20px 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.rows-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Visible scrollbar so it's clear the list scrolls */
+.headers-panel { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+.headers-panel::-webkit-scrollbar { width: 8px; }
+.headers-panel::-webkit-scrollbar-track { background: transparent; }
+.headers-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+.headers-panel::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+
+/* Sticky footer keeps the Add button always visible while rows scroll */
+.panel-footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  background: var(--bg);
+  padding: 10px 0 16px;
+  margin-top: 2px;
+  box-shadow: 0 -8px 12px -10px rgba(0,0,0,0.15);
+  transition: var(--transition);
+}
+
+.header-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.header-row input {
+  padding: 10px 14px;
+  background: var(--surface-2);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-size: 14px;
+  font-family: var(--mono);
+  transition: var(--transition);
+}
+
+.header-row input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(24,24,27,0.08); }
+
+.header-row .header-key { flex: 1 1 140px; }
+.header-row .header-val { flex: 2 1 220px; }
+
+.header-row .remove-header {
+  background: var(--surface-2);
+  border: 1.5px solid var(--border);
+  border-radius: 50%;
+  color: var(--text-dim);
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+}
+
+.header-row .remove-header:hover { border-color: #e74c3c; color: #e74c3c; }
+
+.add-header-btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  padding:10px 16px;
+  background:var(--surface-2);
+  border:1.5px dashed var(--border);
+  border-radius:var(--radius);
+  color:var(--text-dim);
+  font-size:13px;
+  font-weight:700;
+  cursor:pointer;
+  transition:var(--transition);
+  width:fit-content;
+  white-space:nowrap;
+}
+.add-header-btn:hover{
+  border-color:var(--accent);
+  color:var(--accent);
+  background:var(--surface);
+  transform:translateY(-1px);
+}
+@media (max-width:520px){
+  .add-header-btn{
+    width:100%;
+    justify-content:center;
+  }
+}
+
+.body-panel { padding: 16px 20px; flex: 1; display: flex; flex-direction: column; }
+.body-panel textarea {
+  flex: 1;
+  padding: 14px;
+  background: var(--surface-2);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-size: 14px;
+  font-family: var(--mono);
+  resize: none;
+  line-height: 1.6;
+  transition: var(--transition);
+}
+
+.body-panel textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(24,24,27,0.08); }
+
+.auth-panel { padding: 16px 20px; display: flex; flex-direction: column; gap: 16px; overflow-y: auto; }
+.auth-panel label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-dim); font-weight: 800; }
+.auth-row { display: flex; flex-direction: column; gap: 6px; }
+.auth-row input,
+.auth-row select {
+  padding: 10px 12px;
+  background: var(--surface-2);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-size: 14px;
+  transition: var(--transition);
+}
+
+.auth-row input:focus, .auth-row select:focus { outline: none; border-color: var(--accent); }
+
+.auth-help { font-size: 12px; color: var(--text-dim); line-height: 1.5; }
+
+.response-area { flex: 1 1 58%; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 14px; position: relative; min-height: 35vh; }
+
+.copy-btn {
+  opacity: 0.35;
+  transition: opacity 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: var(--radius);
+  border: 1.5px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.copy-float {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  z-index: 5;
+}
+
+.response-body:hover .copy-float { opacity: 1; }
+
+.copy-btn:hover, .copy-float:hover { border-color: var(--accent); color: var(--accent); opacity: 1; }
+
+.response-meta {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.status-badge.success { background: rgba(46,204,113,0.12); color: #27ae60; }
+.status-badge.redirect { background: rgba(243,156,18,0.12); color: #e67e22; }
+.status-badge.client-error { background: rgba(231,76,60,0.12); color: #c0392b; }
+.status-badge.server-error { background: rgba(231,76,60,0.12); color: #c0392b; }
+.status-badge.info { background: rgba(52,152,219,0.12); color: #2980b9; }
+
+.response-time { font-size: 13px; color: var(--text-dim); font-weight: 700; }
+.response-size { font-size: 13px; color: var(--text-dim); font-weight: 700; }
+.response-meta .meta-right { display: flex; gap: 14px; align-items: center; }
+
+/* Postman-style response tabs: Body | Headers (N) */
+.response-tabs {
+  display: flex;
+  gap: 2px;
+  border-bottom: 1.5px solid var(--border);
+}
+
+.response-tab {
+  padding: 8px 14px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text-dim);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: var(--transition);
+  font-family: inherit;
+}
+
+.response-tab:hover { color: var(--text); }
+
+.response-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+.response-tab .count-pill {
+  font-size: 10px;
+  font-weight: 800;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  border-radius: 999px;
+  padding: 1px 7px;
+  line-height: 1.4;
+}
+
+.response-tab.active .count-pill { color: var(--accent); border-color: var(--accent); }
+
+.response-pane { display: none; flex: 1; min-height: 0; flex-direction: column; }
+.response-pane.active { display: flex; }
+
+.response-headers {
+  flex: 1;
+  font-size: 12.5px;
+  font-family: var(--mono);
+  overflow-y: auto;
+  background: var(--surface);
+  border-radius: var(--radius);
+  border: 1.5px solid var(--border);
+  transition: var(--transition);
+}
+
+.response-headers .hdr-row {
+  display: flex;
+  gap: 12px;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--border);
+  line-height: 1.5;
+  word-break: break-all;
+}
+
+.response-headers .hdr-row:last-child { border-bottom: none; }
+.response-headers .hdr-row:nth-child(odd) { background: var(--surface-2); }
+.response-headers .hdr-key { flex: 0 0 220px; max-width: 40%; color: var(--text); font-weight: 700; }
+.response-headers .hdr-val { flex: 1; color: var(--text-dim); }
+.response-headers .hdr-empty { padding: 16px; color: var(--text-dim); font-family: inherit; }
+
+.response-body {
+  flex: 1;
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 16px 16px 48px;
+  font-family: var(--mono);
+  font-size: 13px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-y: auto;
+  border: 1.5px solid var(--border);
+  line-height: 1.6;
+  transition: var(--transition);
+  position: relative;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  color: var(--text-dim);
+  gap: 14px;
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.empty-state .icon { font-size: 52px; opacity: 0.2; }
+
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.35);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(6px);
+}
+
+.modal-overlay.show { display: flex; }
+
+.modal {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  padding: 24px;
+  width: 420px;
+  max-width: 92vw;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: var(--shadow);
+  animation: modalIn 0.2s ease;
+  position: fixed;
+}
+
+.modal h3 {
+  font-size: 18px;
+  color: var(--text);
+  font-weight: 800;
+  cursor: grab;
+  user-select: none;
+}
+
+.modal h3:active { cursor: grabbing; }
+
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.modal input {
+  padding: 12px;
+  background: var(--surface-2);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-size: 15px;
+  transition: var(--transition);
+}
+
+.modal input:focus { outline: none; border-color: var(--accent); }
+
+.modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+.modal-actions button { padding: 10px 18px; border-radius: var(--radius); font-size: 14px; font-weight: 700; cursor: pointer; transition: var(--transition); border: 1.5px solid transparent; min-height: 44px; }
+.modal-actions .btn-primary { background: var(--accent); color: var(--bg); border-color: transparent; }
+.modal-actions .btn-primary:hover { background: var(--accent-dim); box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+.modal-actions .btn-secondary { background: var(--surface-2); color: var(--text); border-color: var(--border); }
+.modal-actions .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+@media (max-width: 860px) {
+  html { font-size: 15px; }
+  body { flex-direction: column !important; }
+  .sidebar {
+    width: 100% !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    padding: 14px 16px !important;
+    gap: 10px !important;
+    border-right: none !important;
+    border-bottom: 1px solid var(--border);
+    box-shadow: none;
+  }
+  .sidebar-header { width: 100%; justify-content: space-between; }
+  .collection-list { flex-direction: row !important; flex-wrap: wrap !important; max-height: 160px; overflow-y: auto; width: 100%; }
+  .main { height: calc(100dvh - 220px); }
+}
+
+@media (max-width: 520px) {
+  html { font-size: 15px; }
+  .toolbar { padding: 12px !important; gap: 8px !important; }
+  .toolbar .btn { padding: 10px 14px !important; font-size: 13px !important; gap: 6px !important; }
+  .url-input { font-size: 16px; }
+  .tabs { padding: 0 12px !important; }
+  .tab { padding: 10px 12px !important; font-size: 12px !important; gap: 4px !important; }
+  .headers-panel { padding: 12px 12px 0 !important; }
+  .panel-footer { padding: 8px 0 12px !important; }
+  .header-row input { flex: 1 1 100% !important; font-size: 16px !important; }
+  .body-panel { padding: 12px !important; }
+  .body-panel textarea { font-size: 14px !important; }
+  .response-area { padding: 12px !important; }
+  .response-body { padding: 16px 16px 48px !important; font-size: 13px !important; }
+  .empty-state { padding: 60px 16px !important; }
+}
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="resize-handle" title="Drag to resize sidebar"></div>
+  <div class="sidebar-header">
+    <h2>Collections</h2>
+    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle dark / light" aria-label="Toggle theme">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    </button>
+  </div>
+
+  <div class="sidebar-actions">
+    <button onclick="saveCurrentRequest()" aria-label="Save request">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+      Save
+    </button>
+  </div>
+
+  <div class="collection-list" id="collectionList"></div>
+</div>
+
+<div class="main">
+  <div class="toolbar">
+    <select class="method-select" id="method" aria-label="HTTP method">
+      <option>GET</option>
+      <option>POST</option>
+      <option>PUT</option>
+      <option>DELETE</option>
+      <option>PATCH</option>
+      <option>HEAD</option>
+      <option>OPTIONS</option>
+    </select>
+
+    <input class="url-input" id="urlInput" placeholder="https://api.example.com/endpoint" aria-label="Request URL" autocomplete="off" />
+
+    <button class="btn btn-primary" id="sendBtn" onclick="sendRequest()" aria-label="Send request">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      Send
+    </button>
+  </div>
+
+  <div class="content-area">
+    <div class="tabs" role="tablist">
+      <button class="tab active" data-tab="headers" onclick="switchTab('headers')" role="tab" aria-selected="true">Headers</button>
+      <button class="tab" data-tab="query" onclick="switchTab('query')" role="tab" aria-selected="false">Query</button>
+      <button class="tab" data-tab="auth" onclick="switchTab('auth')" role="tab" aria-selected="false">Auth</button>
+      <button class="tab" data-tab="body" onclick="switchTab('body')" role="tab" aria-selected="false">Body</button>
+    </div>
+
+    <div class="tab-content active" id="tab-headers" role="tabpanel">
+      <div class="headers-panel" id="headersPanel">
+        <div class="rows-list" id="headerRows">
+          <div class="header-row">
+            <input class="header-key" placeholder="Header name" value="Accept" aria-label="Header key" />
+            <input class="header-val" placeholder="Header value" value="application/json" aria-label="Header value" />
+            <button class="remove-header" onclick="removeHeader(this)" title="Remove" aria-label="Remove header">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="panel-footer">
+          <button class="add-header-btn" onclick="addHeader()" aria-label="Add header">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add Header
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-query" role="tabpanel">
+      <div class="headers-panel" id="queryPanel">
+        <div class="rows-list" id="queryRows">
+          <div class="header-row">
+            <input class="header-key" placeholder="Param name" value="" aria-label="Query parameter name" />
+            <input class="header-val" placeholder="Param value" value="" aria-label="Query parameter value" />
+            <button class="remove-header" onclick="removeQueryParam(this)" title="Remove" aria-label="Remove query parameter">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="panel-footer">
+          <button class="add-header-btn" onclick="addQueryParam()" aria-label="Add query parameter">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add Query Param
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-auth" role="tabpanel">
+      <div class="auth-panel" id="authPanel">
+        <div class="auth-row">
+          <label for="authType">Authorization Type</label>
+          <select id="authType" onchange="updateAuthUI()" aria-label="Authorization type">
+            <option value="none">No Auth</option>
+            <option value="bearer">Bearer Token</option>
+            <option value="basic">Basic Auth</option>
+            <option value="api_key">API Key</option>
+            <option value="oauth2">OAuth 2.0</option>
+          </select>
+        </div>
+
+        <div id="authConfig">
+          <p class="auth-help">No authorization configured. The request will be sent without auth headers.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-body" role="tabpanel">
+      <div class="body-panel">
+        <textarea id="bodyInput" placeholder='{"key": "value"}' aria-label="Request body"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <div class="response-area" id="responseArea">
+    <div class="empty-state">
+      <div class="icon">→</div>
+      <div>Enter a URL, set Auth if needed, and press <strong>Send</strong></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="saveModal" onclick="if(event.target===this)closeSaveModal()">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="saveTitle">
+    <h3 id="saveTitle">Save Request</h3>
+    <input id="saveNameInput" placeholder="Request name (e.g. Get Users)" aria-label="Request name" />
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeSaveModal()">Cancel</button>
+      <button class="btn-primary" onclick="confirmSave()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const COLLECTIONS_KEY = 'api-playground-collections';
+let currentTab = 'headers';
+
+function toggleTheme() {
+  document.body.classList.toggle('dark');
+  const btn = document.querySelector('.theme-toggle');
+  if (!btn) return;
+  btn.setAttribute('aria-label', document.body.classList.contains('dark') ? 'Switch to light mode' : 'Switch to dark mode');
+}
+
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach(t => {
+    const active = t.dataset.tab === tab;
+    t.classList.toggle('active', active);
+    t.setAttribute('aria-selected', active ? 'true' : 'false');
+  });
+  document.querySelectorAll('.tab-content').forEach(tc => tc.classList.toggle('active', tc.id === 'tab-' + tab));
+}
+
+function updateAuthUI() {
+  const type = document.getElementById('authType').value;
+  const container = document.getElementById('authConfig');
+  let html = '';
+
+  if (type === 'none') {
+    html = '<p class="auth-help">No authorization configured. The request will be sent without auth headers.</p>';
+  } else if (type === 'bearer') {
+    html = `<div class="auth-row"><label for="bearerToken">Token</label><input id="bearerToken" type="text" placeholder="Enter Bearer token" value="" /><p class="auth-help">Sent as <code>Authorization: Bearer &lt;token&gt;</code></p></div>`;
+  } else if (type === 'basic') {
+    html = `<div class="auth-row"><label for="basicUser">Username</label><input id="basicUser" type="text" placeholder="Username" value="" /></div><div class="auth-row"><label for="basicPass">Password</label><input id="basicPass" type="password" placeholder="Password" value="" /><p class="auth-help">Sent as <code>Authorization: Basic &lt;base64&gt;</code></p></div>`;
+  } else if (type === 'api_key') {
+    html = `<div class="auth-row"><label for="apiKeyLocation">Send as</label><select id="apiKeyLocation"><option value="header">Header</option><option value="query">Query Parameter</option></select></div><div class="auth-row"><label for="apiKeyName">Key Name</label><input id="apiKeyName" type="text" placeholder="X-API-Key" value="X-API-Key" /></div><div class="auth-row"><label for="apiKeyValue">Key Value</label><input id="apiKeyValue" type="text" placeholder="Enter API key value" value="" /><p class="auth-help">Header: inserted automatically. Query: appended to URL.</p></div>`;
+  } else if (type === 'oauth2') {
+    html = `<div class="auth-row"><label for="oauthToken">Access Token</label><input id="oauthToken" type="text" placeholder="Enter OAuth 2.0 access token" value="" /></div><div class="auth-row"><label for="oauthPrefix">Token Prefix</label><select id="oauthPrefix"><option value="Bearer">Bearer</option><option value="">None</option><option value="Token">Token</option></select></div><p class="auth-help">Sent as <code>Authorization: Bearer &lt;token&gt;</code> (or chosen prefix).</p>`;
+  }
+
+  container.innerHTML = html;
+}
+
+function safeGetValue(id) {
+  const el = document.getElementById(id);
+  return el ? el.value : '';
+}
+
+function safeSetValue(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.value = value != null ? value : '';
+}
+
+function getAuthHeaders() {
+  const type = document.getElementById('authType').value;
+  const headers = {};
+  let urlModifier = null;
+
+  if (type === 'none') return { headers, urlModifier };
+
+  if (type === 'bearer') {
+    const token = safeGetValue('bearerToken').trim();
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+  }
+
+  if (type === 'basic') {
+    const user = safeGetValue('basicUser').trim();
+    const pass = safeGetValue('basicPass').trim();
+    if (user || pass) {
+      try {
+        const creds = btoa(unescape(encodeURIComponent(user + ':' + pass)));
+        headers['Authorization'] = 'Basic ' + creds;
+      } catch (e) { /* ignore */ }
+    }
+  }
+
+  if (type === 'api_key') {
+    const location = safeGetValue('apiKeyLocation');
+    const key = safeGetValue('apiKeyName').trim();
+    const value = safeGetValue('apiKeyValue').trim();
+    if (key && value) {
+      if (location === 'header') {
+        headers[key] = value;
+      } else {
+        urlModifier = { key, value };
+      }
+    }
+  }
+
+  if (type === 'oauth2') {
+    const token = safeGetValue('oauthToken').trim();
+    const prefix = safeGetValue('oauthPrefix');
+    if (token) {
+      headers['Authorization'] = (prefix ? prefix + ' ' : '') + token;
+    }
+  }
+
+  return { headers, urlModifier };
+}
+
+function makeHeaderRow(key, val) {
+  const row = document.createElement('div');
+  row.className = 'header-row';
+  row.innerHTML = `<input class="header-key" placeholder="Header name" value="${esc(key || '')}" aria-label="Header key" /><input class="header-val" placeholder="Header value" value="${esc(val || '')}" aria-label="Header value" /><button class="remove-header" onclick="removeHeader(this)" title="Remove" aria-label="Remove header"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`;
+  return row;
+}
+
+function makeQueryRow(key, val) {
+  const row = document.createElement('div');
+  row.className = 'header-row';
+  row.innerHTML = `<input class="header-key" placeholder="Param name" value="${esc(key || '')}" aria-label="Query parameter name" /><input class="header-val" placeholder="Param value" value="${esc(val || '')}" aria-label="Query parameter value" /><button class="remove-header" onclick="removeQueryParam(this)" title="Remove" aria-label="Remove query parameter"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`;
+  row.querySelectorAll('input').forEach(inp => inp.addEventListener('input', updateUrlFromParams));
+  return row;
+}
+
+function addHeader() {
+  const rows = document.getElementById('headerRows');
+  const row = makeHeaderRow('', '');
+  rows.appendChild(row); // new row goes ABOVE the sticky Add button
+  row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  row.querySelector('.header-key').focus();
+}
+
+function removeHeader(btn) {
+  const rows = document.getElementById('headerRows');
+  if (rows.children.length > 1) btn.parentElement.remove();
+  else {
+    btn.parentElement.querySelector('.header-key').value = '';
+    btn.parentElement.querySelector('.header-val').value = '';
+  }
+}
+
+function addQueryParam() {
+  const rows = document.getElementById('queryRows');
+  const row = makeQueryRow('', '');
+  rows.appendChild(row); // new row goes ABOVE the sticky Add button
+  row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  row.querySelector('.header-key').focus();
+  updateUrlFromParams();
+}
+
+function removeQueryParam(btn) {
+  const rows = document.getElementById('queryRows');
+  if (rows.children.length > 1) btn.parentElement.remove();
+  else {
+    btn.parentElement.querySelector('.header-key').value = '';
+    btn.parentElement.querySelector('.header-val').value = '';
+  }
+  updateUrlFromParams();
+}
+
+function getQueryParams() {
+  const rows = document.querySelectorAll('#queryRows .header-row');
+  const params = [];
+  rows.forEach(r => {
+    const k = r.querySelector('.header-key').value.trim();
+    const v = r.querySelector('.header-val').value.trim();
+    if (k || v) params.push({ key: k, value: v });
+  });
+  return params;
+}
+
+function updateUrlFromParams() {
+  const urlInput = document.getElementById('urlInput');
+  const baseUrl = urlInput.value.split('?')[0];
+  const params = getQueryParams();
+  if (params.length > 0 && params.some(p => p.key)) {
+    const qs = params.filter(p => p.key).map(p => encodeURIComponent(p.key) + '=' + encodeURIComponent(p.value)).join('&');
+    urlInput.value = baseUrl + '?' + qs;
+  } else {
+    urlInput.value = baseUrl;
+  }
+}
+
+function getHeaders() {
+  const rows = document.querySelectorAll('#headerRows .header-row');
+  const headers = {};
+  rows.forEach(r => {
+    const k = r.querySelector('.header-key').value.trim();
+    const v = r.querySelector('.header-val').value.trim();
+    if (k) headers[k] = v;
+  });
+  return headers;
+}
+
+function buildRequestUrl(url) {
+  let finalUrl = url;
+  const authData = getAuthHeaders();
+  if (authData.urlModifier) {
+    const modifier = authData.urlModifier;
+    const base = finalUrl.split('?')[0];
+    const existing = finalUrl.includes('?') ? finalUrl.split('?')[1] : '';
+    let qs = existing ? existing + '&' : '';
+    qs += encodeURIComponent(modifier.key) + '=' + encodeURIComponent(modifier.value);
+    finalUrl = base + '?' + qs;
+  }
+  return finalUrl;
+}
+
+function copyResponse() {
+  const bodyEl = document.querySelector('.response-body');
+  if (!bodyEl) return;
+  const clone = bodyEl.cloneNode(true);
+  const btn = clone.querySelector('.copy-float');
+  if (btn) btn.remove();
+  const text = clone.textContent || clone.innerText || '';
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.querySelector('.copy-float');
+    const original = btn ? btn.innerHTML : '';
+    if (btn) {
+      btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copied';
+      setTimeout(() => {
+        btn.innerHTML = original;
+      }, 1500);
+    }
+  }).catch(() => alert('Failed to copy'));
+}
+
+async function sendRequest() {
+  let url = document.getElementById('urlInput').value.trim();
+  const method = document.getElementById('method').value;
+  const bodyInput = document.getElementById('bodyInput').value.trim();
+  const sendBtn = document.getElementById('sendBtn');
+
+  if (!url) { alert('Please enter a URL'); return; }
+
+  url = buildRequestUrl(url);
+
+  sendBtn.disabled = true;
+  sendBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Sending...';
+
+  const manualHeaders = getHeaders();
+  const authData = getAuthHeaders();
+  const headers = { ...manualHeaders, ...authData.headers };
+
+  const fetchOpts = { method, headers };
+  if (bodyInput && ['POST', 'PUT', 'PATCH'].includes(method)) {
+    fetchOpts.body = bodyInput;
+  }
+
+  const startTime = performance.now();
+  try {
+    const res = await fetch(url, fetchOpts);
+    const elapsed = Math.round(performance.now() - startTime);
+    const resHeaders = {};
+    res.headers.forEach((v, k) => { resHeaders[k] = v; });
+    let bodyText = '';
+    try { bodyText = await res.text(); } catch (e) { bodyText = '[Could not read response body]'; }
+    renderResponse(res.status, resHeaders, bodyText, elapsed);
+  } catch (err) {
+    const elapsed = Math.round(performance.now() - startTime);
+    renderResponse(0, {}, 'Error: ' + err.message, elapsed);
+  }
+
+  sendBtn.disabled = false;
+  sendBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Send';
+}
+
+function switchResponseTab(tab) {
+  document.querySelectorAll('.response-tab').forEach(t => t.classList.toggle('active', t.dataset.rtab === tab));
+  document.querySelectorAll('.response-pane').forEach(p => p.classList.toggle('active', p.dataset.rpane === tab));
+}
+
+function formatSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+}
+
+function buildHeaderRowsHtml(entries) {
+  if (!entries || entries.length === 0) {
+    return '<div class="hdr-empty">No response headers received</div>';
+  }
+  return entries.map(([k, v]) => `<div class="hdr-row"><span class="hdr-key">${esc(k)}</span><span class="hdr-val">${esc(v)}</span></div>`).join('');
+}
+
+function buildResponseHTML(opts) {
+  const headerCount = opts.headerEntries ? opts.headerEntries.length : 0;
+  return `
+    <div class="response-meta">
+      <span class="status-badge ${opts.statusClass}">${opts.statusLabel}</span>
+      <span class="meta-right">
+        <span class="response-time">${esc(opts.timeText || '')}</span>
+        ${opts.sizeText ? '<span class="response-size">' + esc(opts.sizeText) + '</span>' : ''}
+      </span>
+    </div>
+    <div class="response-tabs" role="tablist">
+      <button class="response-tab active" data-rtab="body" onclick="switchResponseTab('body')" role="tab">Body</button>
+      <button class="response-tab" data-rtab="headers" onclick="switchResponseTab('headers')" role="tab">Headers <span class="count-pill">${headerCount}</span></button>
+    </div>
+    <div class="response-pane active" data-rpane="body">
+      <div class="response-body">${esc(opts.bodyText)}<button onclick="copyResponse()" class="copy-float" aria-label="Copy response" title="Copy response"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button></div>
+    </div>
+    <div class="response-pane" data-rpane="headers">
+      <div class="response-headers">${buildHeaderRowsHtml(opts.headerEntries)}</div>
+    </div>
+  `;
+}
+
+function renderResponse(status, headers, body, timeMs) {
+  const area = document.getElementById('responseArea');
+  let statusClass = 'info';
+  if (status >= 200 && status < 300) statusClass = 'success';
+  else if (status >= 300 && status < 400) statusClass = 'redirect';
+  else if (status >= 400 && status < 500) statusClass = 'client-error';
+  else if (status >= 500) statusClass = 'server-error';
+  if (!status) statusClass = 'server-error';
+
+  let displayBody = body;
+  try { displayBody = JSON.stringify(JSON.parse(body), null, 2); } catch (e) {}
+
+  const sizeBytes = new Blob([body || '']).size;
+
+  area.innerHTML = buildResponseHTML({
+    statusClass,
+    statusLabel: `${status || 'FAILED'} ${status ? getStatusText(status) : ''}`,
+    timeText: timeMs + 'ms',
+    sizeText: formatSize(sizeBytes),
+    headerEntries: Object.entries(headers || {}),
+    bodyText: displayBody
+  });
+}
+
+function getStatusText(code) {
+  const m = {
+    200: 'OK', 201: 'Created', 204: 'No Content', 301: 'Moved', 302: 'Found', 304: 'Not Modified',
+    400: 'Bad Request', 401: 'Unauthorized', 403: 'Forbidden', 404: 'Not Found', 405: 'Method Not Allowed',
+    429: 'Too Many Requests', 500: 'Server Error', 502: 'Bad Gateway', 503: 'Unavailable'
+  };
+  return m[code] || '';
+}
+
+function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
+function loadCollections() {
+  try { return JSON.parse(sessionStorage.getItem(COLLECTIONS_KEY) || '[]'); } catch (e) { return []; }
+}
+
+function saveCollections(cols) { sessionStorage.setItem(COLLECTIONS_KEY, JSON.stringify(cols)); }
+
+function renderCollections() {
+  const list = document.getElementById('collectionList');
+  const cols = loadCollections();
+  if (cols.length === 0) {
+    list.innerHTML = '<div style="font-size:13px;color:var(--text-dim);padding:8px;">No saved requests</div>';
+    return;
+  }
+  list.innerHTML = cols.map((c, i) => {
+    const m = (c.method || 'GET').toUpperCase();
+    let cls = 'get';
+    if (m === 'POST') cls = 'post';
+    else if (m === 'PUT') cls = 'put';
+    else if (m === 'DELETE') cls = 'del';
+    else if (m === 'PATCH') cls = 'patch';
+    return `<div class="collection-item" onclick="loadRequest(${i})" tabindex="0" role="button" aria-label="Load ${esc(c.name || 'Untitled')}">
+      <span class="method ${cls}">${m}</span>
+      <span class="name">${esc(c.name || 'Untitled')}</span>
+      <button class="delete-btn" onclick="event.stopPropagation();deleteCollection(${i})" title="Delete" aria-label="Delete">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>`;
+  }).join('');
+}
+
+function saveCurrentRequest() {
+  document.getElementById('saveModal').classList.add('show');
+  document.getElementById('saveNameInput').focus();
+}
+
+function closeSaveModal() {
+  document.getElementById('saveModal').classList.remove('show');
+}
+
+function confirmSave() {
+  const name = document.getElementById('saveNameInput').value.trim();
+  if (!name) return;
+
+  const area = document.getElementById('responseArea');
+  let savedResponse = null;
+  const statusBadge = area.querySelector('.status-badge');
+  const timeEl = area.querySelector('.response-time');
+  const headersEl = area.querySelector('.response-headers');
+  const bodyEl = area.querySelector('.response-body');
+
+  if (statusBadge || bodyEl) {
+    let bodyText = '';
+    if (bodyEl) {
+      const clone = bodyEl.cloneNode(true);
+      const floatBtn = clone.querySelector('.copy-float');
+      if (floatBtn) floatBtn.remove();
+      bodyText = clone.textContent;
+    }
+    const headerEntries = [];
+    area.querySelectorAll('.response-headers .hdr-row').forEach(r => {
+      const k = r.querySelector('.hdr-key');
+      const v = r.querySelector('.hdr-val');
+      if (k) headerEntries.push([k.textContent, v ? v.textContent : '']);
+    });
+    const sizeEl = area.querySelector('.response-size');
+    savedResponse = {
+      modifier: statusBadge ? (statusBadge.className.replace('status-badge ', '').trim() || 'info') : 'info',
+      statusText: statusBadge ? statusBadge.innerText : '',
+      timeText: timeEl ? timeEl.innerText : '',
+      sizeText: sizeEl ? sizeEl.innerText : '',
+      headerEntries: headerEntries,
+      bodyText: bodyText
+    };
+  }
+
+  const req = {
+    name,
+    method: document.getElementById('method').value,
+    url: document.getElementById('urlInput').value,
+    headers: getHeaders(),
+    query: getQueryParams(),
+    body: document.getElementById('bodyInput').value,
+    authType: document.getElementById('authType').value,
+    bearerToken: safeGetValue('bearerToken'),
+    basicUser: safeGetValue('basicUser'),
+    basicPass: safeGetValue('basicPass'),
+    apiKeyLocation: safeGetValue('apiKeyLocation'),
+    apiKeyName: safeGetValue('apiKeyName'),
+    apiKeyValue: safeGetValue('apiKeyValue'),
+    oauthToken: safeGetValue('oauthToken'),
+    oauthPrefix: safeGetValue('oauthPrefix'),
+    savedResponse: savedResponse
+  };
+
+  const cols = loadCollections();
+  cols.push(req);
+  saveCollections(cols);
+  renderCollections();
+  closeSaveModal();
+  document.getElementById('saveNameInput').value = '';
+}
+
+function loadRequest(index) {
+  const cols = loadCollections();
+  const req = cols[index];
+  if (!req) return;
+
+  document.getElementById('method').value = req.method || 'GET';
+  document.getElementById('urlInput').value = req.url || '';
+  document.getElementById('bodyInput').value = req.body || '';
+
+  document.getElementById('authType').value = req.authType || 'none';
+  updateAuthUI();
+  safeSetValue('bearerToken', req.bearerToken);
+  safeSetValue('basicUser', req.basicUser);
+  safeSetValue('basicPass', req.basicPass);
+  safeSetValue('apiKeyLocation', req.apiKeyLocation || 'header');
+  safeSetValue('apiKeyName', req.apiKeyName || 'X-API-Key');
+  safeSetValue('apiKeyValue', req.apiKeyValue);
+  safeSetValue('oauthToken', req.oauthToken);
+  safeSetValue('oauthPrefix', req.oauthPrefix || 'Bearer');
+
+  // Only the rows container is cleared — the sticky Add button is preserved
+  const headerRows = document.getElementById('headerRows');
+  headerRows.innerHTML = '';
+  const savedHeaders = req.headers || {};
+  const headerEntries = Object.entries(savedHeaders);
+  if (headerEntries.length === 0) {
+    headerRows.appendChild(makeHeaderRow('Accept', 'application/json'));
+  } else {
+    headerEntries.forEach(([k, v]) => headerRows.appendChild(makeHeaderRow(k, v)));
+  }
+
+  const queryRows = document.getElementById('queryRows');
+  queryRows.innerHTML = '';
+  const savedQuery = req.query || [];
+  if (savedQuery.length === 0 || !savedQuery.some(p => p.key)) {
+    queryRows.appendChild(makeQueryRow('', ''));
+  } else {
+    savedQuery.forEach(({ key, value }) => queryRows.appendChild(makeQueryRow(key, value)));
+  }
+
+  if (req.savedResponse && (req.savedResponse.statusText !== undefined || req.savedResponse.bodyText !== undefined)) {
+    document.getElementById('responseArea').innerHTML = buildResponseHTML({
+      statusClass: req.savedResponse.modifier || 'info',
+      statusLabel: esc(req.savedResponse.statusText || ''),
+      timeText: req.savedResponse.timeText || '',
+      sizeText: req.savedResponse.sizeText || '',
+      headerEntries: req.savedResponse.headerEntries || [],
+      bodyText: req.savedResponse.bodyText || ''
+    });
+  }
+
+  updateUrlFromParams();
+}
+
+function deleteCollection(index) {
+  const cols = loadCollections();
+  cols.splice(index, 1);
+  saveCollections(cols);
+  renderCollections();
+}
+
+document.addEventListener('keydown', e => {
+  if (e.ctrlKey && e.key === 'Enter') sendRequest();
+  if (e.ctrlKey && e.key === 's') {
+    e.preventDefault();
+    saveCurrentRequest();
+  }
+});
+
+document.getElementById('urlInput').addEventListener('input', function() {
+  const qsIndex = this.value.indexOf('?');
+  const queryRows = document.getElementById('queryRows');
+  const firstKey = queryRows.querySelector('input.header-key');
+  if (qsIndex >= 0 && queryRows.children.length <= 1 && !(firstKey && firstKey.value.trim())) {
+    const qs = this.value.substring(qsIndex + 1);
+    const params = qs.split('&').filter(p => p.includes('=') || p.trim() !== '');
+    queryRows.innerHTML = '';
+    params.forEach(p => {
+      const [kRaw, vRaw] = p.split('=');
+      const k = decodeURIComponent(kRaw || '');
+      const v = decodeURIComponent((vRaw || '').replace(/\+/g, ' '));
+      queryRows.appendChild(makeQueryRow(k, v));
+    });
+    if (params.length === 0) {
+      queryRows.appendChild(makeQueryRow('', ''));
+    }
+  }
+});
+
+function initResize() {
+  const sidebar = document.querySelector('.sidebar');
+  const handle = document.querySelector('.resize-handle');
+  if (!sidebar || !handle) return;
+
+  let isResizing = false;
+
+  handle.addEventListener('mousedown', (e) => {
+    isResizing = true;
+    e.preventDefault();
+    document.body.style.cursor = 'col-resize';
+  });
+
+  document.addEventListener('mousemove', (e) => {
+    if (!isResizing) return;
+    const rect = sidebar.getBoundingClientRect();
+    let newWidth = e.clientX - rect.left;
+    newWidth = Math.max(200, Math.min(280, newWidth));
+    sidebar.style.width = newWidth + 'px';
+  });
+
+  document.addEventListener('mouseup', () => {
+    isResizing = false;
+    document.body.style.cursor = '';
+  });
+}
+
+function makeDraggable(el) {
+  const header = el.querySelector('h3');
+  if (!header) return;
+  header.style.cursor = 'grab';
+  let isDragging = false, startX, startY, startLeft, startTop;
+
+  header.addEventListener('mousedown', (e) => {
+    isDragging = true;
+    startX = e.clientX;
+    startY = e.clientY;
+    const rect = el.getBoundingClientRect();
+    startLeft = rect.left;
+    startTop = rect.top;
+    header.style.cursor = 'grabbing';
+    e.preventDefault();
+  });
+
+  document.addEventListener('mousemove', (e) => {
+    if (!isDragging) return;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    el.style.position = 'fixed';
+    el.style.left = (startLeft + dx) + 'px';
+    el.style.top = (startTop + dy) + 'px';
+    el.style.transform = 'none';
+    el.style.margin = '0';
+  });
+
+  document.addEventListener('mouseup', () => {
+    isDragging = false;
+    if (header) header.style.cursor = 'grab';
+  });
+}
+
+// Attach url-sync listeners to the initial query row
+document.querySelectorAll('#queryRows input').forEach(inp => inp.addEventListener('input', updateUrlFromParams));
+
+updateAuthUI();
+renderCollections();
+initResize();
+makeDraggable(document.querySelector('.modal'));
+</script>
+</body>
+</html>
