@@ -1,5 +1,4 @@
 <div align="center">
-
 <img src="logo.png" alt="API Tester logo" width="120" />
 
 # API Tester
@@ -9,6 +8,8 @@
 No install. No build. No dependencies. Open it, test your API, done.
 
 ![HTML](https://img.shields.io/badge/HTML-Vanilla-e34c26) ![CSS](https://img.shields.io/badge/CSS-Vanilla-264de4) ![JavaScript](https://img.shields.io/badge/JavaScript-Vanilla-f0db4f) ![License](https://img.shields.io/badge/License-MIT-green)
+
+**🔗 [Try the live demo](https://manoj-maharana.github.io/api-tester/)**
 
 </div>
 
@@ -49,6 +50,8 @@ cd api-tester
 
 Open `index.html` in any modern browser, paste an endpoint like
 `https://jsonplaceholder.typicode.com/posts/1`, and press **Send**.
+
+Or skip the clone entirely — [try it live here](https://manoj-maharana.github.io/api-tester/).
 
 ## 🌍 Deploy
 
