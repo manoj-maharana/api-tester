@@ -14,10 +14,6 @@ No install. No build. No dependencies. Open it, test your API, done.
 
 ---
 
-## 🔍 Why this exists
-
-Sometimes you just want to hit an endpoint and see what comes back — without signing into a heavy desktop app. API Tester is the whole client packed into a single `index.html`: methods, headers, query params, auth, and a Postman-style response viewer.
-
 ## ✨ Features
 
 - All HTTP methods — GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS
